@@ -212,7 +212,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 238382725}
-  - component: {fileID: 238382724}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -220,20 +219,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &238382724
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 238382723}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d649b845ef576649b63b57382af6be1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  playerNickname: {fileID: 1281143146}
-  connecting: {fileID: 983622547}
 --- !u!4 &238382725
 Transform:
   m_ObjectHideFlags: 0
@@ -470,8 +455,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 238382724}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+      - m_Target: {fileID: 864371946}
+        m_TargetAssemblyTypeName: Manager.LaucherManager, Assembly-CSharp
         m_MethodName: ExitButton
         m_Mode: 1
         m_Arguments:
@@ -532,6 +517,7 @@ GameObject:
   - component: {fileID: 864371944}
   - component: {fileID: 864371943}
   - component: {fileID: 864371942}
+  - component: {fileID: 864371946}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -622,6 +608,20 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &864371946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864371941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00f560b37ae743a41a045d7c7437d648, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerNickname: {fileID: 1281143146}
+  connecting: {fileID: 983622547}
 --- !u!1 &983622547
 GameObject:
   m_ObjectHideFlags: 0
@@ -740,7 +740,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -164.7, y: -10.66}
+  m_AnchoredPosition: {x: -174.3, y: -10.66}
   m_SizeDelta: {x: 191.68, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1281143146
@@ -800,8 +800,8 @@ MonoBehaviour:
   m_OnDidEndEdit:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 238382724}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+      - m_Target: {fileID: 864371946}
+        m_TargetAssemblyTypeName: Manager.LaucherManager, Assembly-CSharp
         m_MethodName: UpdateText
         m_Mode: 1
         m_Arguments:
@@ -1525,8 +1525,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 238382724}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+      - m_Target: {fileID: 864371946}
+        m_TargetAssemblyTypeName: Manager.LaucherManager, Assembly-CSharp
         m_MethodName: EnterButton
         m_Mode: 1
         m_Arguments:
