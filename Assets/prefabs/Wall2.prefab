@@ -249,7 +249,7 @@ Transform:
   - {fileID: 8924001834912661817}
   - {fileID: 1783565988681656779}
   m_Father: {fileID: 0}
-  m_RootOrder: -1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &8938023619298970793
 MeshRenderer:

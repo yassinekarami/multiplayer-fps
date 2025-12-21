@@ -53,7 +53,6 @@ namespace Game.Shared.UI
             }
 
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
-      //      PhotonNetwork.RaiseEvent(Constant.PunEventCode.setUpPlayerInfoPanelEventCode, players[0].GetComponent<PlayerStates>().character, raiseEventOptions, SendOptions.SendReliable);
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.setUpPlayerInfoPanelEventCode, content.ToArray(), raiseEventOptions, SendOptions.SendReliable);
         }
         // Update is called once per frame
@@ -80,9 +79,7 @@ namespace Game.Shared.UI
                     characters.Add((Character)data);
                 }
              
-
-                 InstiateInfoForeachPlayer(characters);
-
+                InstantiateInfoForeachPlayer(characters);
 
             }
 
@@ -90,10 +87,10 @@ namespace Game.Shared.UI
 
 
         /// <summary>
-        /// instanatiate nickname and healthbar for each character present in the room
+        /// instantiate nickname and health bar for each character present in the room
         /// </summary>
         /// <param name="characters"></param>
-        public void InstiateInfoForeachPlayer(List<Character> characters)
+        public void InstantiateInfoForeachPlayer(List<Character> characters)
         {
             float yOffset = -30; // distance between each item
             int index = 0;
@@ -102,11 +99,9 @@ namespace Game.Shared.UI
             {
                 // playerInfo.GetComponentInChildren<Text>().text =
                 playerInfo.GetComponentInChildren<Text>().text = character.nickname;
-                Debug.Log("character color " + character.color+ " color " + ColorUtils.ResolveColorFromString(character.color));
                 playerInfo.GetComponentInChildren<Image>().color = ColorUtils.ParseRGBA(character.color);
                 GameObject toInstantiate = Instantiate(playerInfo, gameObject.transform); ;
           
-
 
                 // Apply vertical offset
                 toInstantiate.GetComponent<RectTransform>().anchoredPosition +=

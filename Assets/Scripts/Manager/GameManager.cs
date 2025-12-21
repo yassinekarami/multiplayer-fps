@@ -7,7 +7,6 @@ using Core.Event;
 using Core.Utils;
 using ExitGames.Client.Photon;
 
-using Core.Utils;
 
 namespace Manager
 {
@@ -26,29 +25,65 @@ namespace Manager
         [SerializeField] GameObject level = null;
 
         List<GameObject> spawnPoints = new List<GameObject>();
+        [SerializeField] List<GameObject> weaponSpawnPoints = new List<GameObject>();
 
+        List<string> availableWeapons = new List<string>();
 
         private ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable();
+        private float timer = 20;
 
         private void Awake()
         {
+            PhotonNetwork.AutomaticallySyncScene = true;
+            PhotonNetwork.AddCallbackTarget(this);
             colorSelectorPanel = GameObject.Find("ColorSelectorPanel");
             waitingPanel = GameObject.Find("WaitingBG");
             inGamePanel = GameObject.Find("InGamePanel");
             level = GameObject.Find("Level");
 
             spawnPoints.AddRange(GameObject.FindGameObjectsWithTag(Constant.Tag.SPAWN_POINT));
+            weaponSpawnPoints.AddRange(GameObject.FindGameObjectsWithTag(Constant.Tag.WEAPON_SPAWN_POINT));
+            availableWeapons.AddRange(new[] { "RL0N-25_low", "Sci-Fi Gun", "Bio Integrity Gun" });
         }
+
+        
 
         private void Start()
         {
+
             customProperties["readyPlayers"] = 0;
-            level.SetActive(false);
+          //level.SetActive(false);
             inGamePanel.SetActive(false);
             colorSelectorPanel.SetActive(true);
             waitingPanel.SetActive(false);
 
             PhotonNetwork.JoinRandomOrCreateRoom(null,roomOptions: setUpRoomOptions());
+        }
+
+        private void Update()
+        {
+
+
+            if(PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties != null &&
+                (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
+            {
+                timer -= Time.deltaTime;
+                if (timer <= 0f)
+                {
+                    Queue<GameObject> queue = new Queue<GameObject>(weaponSpawnPoints);
+                    foreach (string weapon in availableWeapons)
+                    {
+                        GameObject pointToBeSpawnIn = queue.Dequeue();
+                        if (pointToBeSpawnIn.transform.childCount == 0)
+                        {
+                            GameObject obj = PhotonNetwork.Instantiate(weapon, pointToBeSpawnIn.transform.position, Quaternion.identity, 0);
+                            obj.transform.parent = pointToBeSpawnIn.transform;
+                        }
+                    }
+                    timer = 20f;
+                }
+            }
+            
         }
 
         /// <summary>
@@ -64,17 +99,8 @@ namespace Manager
             if (PhotonNetwork.CurrentRoom.PlayerCount == maxPlayersInRoom)
             {
       
-             //   SendTheGameIsReadyEvent();
-                // if all the player has joined , raise an event to enable button enter and quit from the waiing panel
                 Debug.Log("the game start , number of players " + PhotonNetwork.CurrentRoom.PlayerCount);
-                //foreach (Character character in characters)
-                //{
 
-                //    GameObject obj = PhotonNetwork.Instantiate("Ybot", Vector3.zero, Quaternion.identity) ;
-                //    obj.GetComponent<PlayerStates>().character = character;
-                //}
-                //    playerInfoPanel.GetComponent<PlayersInfoPanel>().InstiateInfoForeachPlayer(characters);
-           
             }
         }
 
@@ -134,7 +160,7 @@ namespace Manager
         }
 
         /// <summary>
-        /// create aninstance of character
+        /// create an instance of character
         /// </summary>
         /// <param name="nickname"></param>
         /// <param name="color"></param>
@@ -173,13 +199,12 @@ namespace Manager
         /// <param name="propertiesThatChanged"></param>
         public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
         {
-            //Debug.Log("properties updated " + propertiesThatChanged.ToString());
-            //Debug.Log((int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
 
-        //    Debug.Log(maxPlayersInRoom  + " "+ PhotonNetwork.CurrentRoom.MaxPlayers);
-       
-            if (PhotonNetwork.CurrentRoom.CustomProperties != null && (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == PhotonNetwork.CurrentRoom.MaxPlayers)
+            if (PhotonNetwork.CurrentRoom.CustomProperties != null && 
+                (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
             {
+                Debug.Log("OnRoomPropertiesUpdate :readyPlayers " + (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"]);
+
                 SendTheGameIsReadyEvent();
             }
         }
@@ -191,10 +216,8 @@ namespace Manager
             level.SetActive(true);
             waitingPanel.SetActive(false);
 
-
             foreach (Character character in characters)
             {
-            //    Debug.Log("enable level " + character.color.ToString());
                 object[] data = new object[]
                 {
                     character.color.ToString(), character.nickname
@@ -202,12 +225,11 @@ namespace Manager
                 Queue<GameObject> queue = new Queue<GameObject>(spawnPoints);
 
                 GameObject obj = PhotonNetwork.Instantiate("Ybot", queue.Dequeue().transform.position, Quaternion.identity, 0, data);
-             //   obj.GetComponent<PlayerStates>().character = character;
             }
             inGamePanel.SetActive(true);
-            //    playerInfoPanel.GetComponent<PlayersInfoPanel>().InstiateInfoForeachPlayer(characters);
         }
-            
+
+        
     }
 }
 

@@ -3,6 +3,9 @@ using Photon.Pun;
 using UnityEngine.UI;
 using Core.Event;
 using Core.Utils;
+using ExitGames.Client.Photon;
+using Photon.Realtime;
+
 namespace Game.KillCount.UI
 {
 
@@ -10,7 +13,7 @@ namespace Game.KillCount.UI
     /// class for color selector panel
     /// it containts method for choosing color
     /// </summary>
-    public class ColorSelector : MonoBehaviour
+    public class ColorSelector : MonoBehaviour, IOnEventCallback
     {
 
         /// <summary>
@@ -18,34 +21,24 @@ namespace Game.KillCount.UI
         /// </summary>
         private PhotonView photonView;
 
+        private void OnEnable()
+        {
+            PhotonNetwork.AddCallbackTarget(this);
+        }
+
         private void Start()
         {
             photonView = GetComponent<PhotonView>();
         }
 
         /// <summary>
-        /// update the color panel when a color is choosed
-        /// than send an event to the gameManager to set the color / player
-        /// </summary>
-        /// <param name="color"></param>
-        [PunRPC]
-        void UpdateColorSelectorPanel(string color)
-        {
-            //Debug.Log(color + " has been choosed by the player "+ PhotonNetwork.LocalPlayer.NickName);
-            //Debug.Log("PunRPC updateColorSelectorPanel " + color +" will be deleted");
-            GameObject buttonToDisable = GameObject.Find(color);
-            buttonToDisable.GetComponent<Button>().interactable = false;
-            //Debug.Log("UpdateColorSelectorPanel " + color +" resolving "+ ColorUtils.ResolveColorFromString(color));
- 
-            CreatePlayerEvent.onColorChoosed?.Invoke(PhotonNetwork.LocalPlayer.NickName, ColorUtils.ResolveColorFromString(color));
-        }
-        /// <summary>
         /// red color button is clicked
         /// </summary>
         public void RedColorChoosed()
         {
-            //Debug.Log("red color is choosed");
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "RedButton");
+            object[] content = new object[] { "RedButton" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
 
         /// <summary>
@@ -53,7 +46,9 @@ namespace Game.KillCount.UI
         /// </summary>
         public void GreenColorChoosed()
         {
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "GreenButton");
+            object[] content = new object[] { "GreenButton" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
 
         /// <summary>
@@ -61,7 +56,9 @@ namespace Game.KillCount.UI
         /// </summary>
         public void OrangeColorChoosed()
         {
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "OrangeButton");
+            object[] content = new object[] { "OrangeButton",  };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
 
         /// <summary>
@@ -69,7 +66,9 @@ namespace Game.KillCount.UI
         /// </summary>
         public void PurpleColorChoosed()
         {
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "PurpleButton");
+            object[] content = new object[] { "PurpleButton" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
 
         /// <summary>
@@ -77,7 +76,9 @@ namespace Game.KillCount.UI
         /// </summary>
         public void BlueColorChoosed()
         {
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "BlueButton");
+            object[] content = new object[] { "BlueButton" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
         }
 
         /// <summary>
@@ -85,7 +86,27 @@ namespace Game.KillCount.UI
         /// </summary>
         public void GreyColorChoosed()
         {
-            photonView.RPC("UpdateColorSelectorPanel", RpcTarget.AllBuffered, "GreyButton");
+            object[] content = new object[] { "GreyButton" };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.colorHasBeenChooseEventCode, content, raiseEventOptions, SendOptions.SendReliable);
+        }
+
+        public void OnEvent(EventData photonEvent)
+        {
+            byte eventCode = photonEvent.Code;
+         
+            if (eventCode == Constant.PunEventCode.colorHasBeenChooseEventCode)
+            {
+                object[] data = (object[])photonEvent.CustomData;
+                string button = (string)data[0];
+
+                GameObject buttonGameObject = GameObject.Find(button);
+                if (buttonGameObject != null && buttonGameObject.GetComponent<Button>())
+                {
+                    GameObject.Find(button).GetComponent<Button>().interactable = false;
+                    CreatePlayerEvent.onColorChoosed?.Invoke(PhotonNetwork.LocalPlayer.NickName, ColorUtils.ResolveColorFromString(button));
+                }
+            }
         }
     }
 
