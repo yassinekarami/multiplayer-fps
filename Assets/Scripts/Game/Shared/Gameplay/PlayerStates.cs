@@ -1,17 +1,17 @@
-using UnityEngine;
+using Core.Interface.PlayerInfoUI;
 using Core.Model;
-using Photon.Pun;
 using Core.Utils;
+using Manager;
+using Photon.Pun;
+using System.Collections.Generic;
+using UnityEngine;
 namespace Game.Shared.Gameplay
 {
-    public class PlayerStates : MonoBehaviour, IPunInstantiateMagicCallback
+    public class PlayerStates : MonoBehaviour, IPlayerInfoSubject, IPunInstantiateMagicCallback
     {
         public Character character;
-
-        private void Start()
-        {
-         //   PlayerGotShotEvent.onPlayerShot += decreaseHealth;
-        }
+        private bool isDead = false;
+  
 
         public void OnPhotonInstantiate(PhotonMessageInfo info)
         {
@@ -19,16 +19,43 @@ namespace Game.Shared.Gameplay
             object[] instantiationData = info.photonView.InstantiationData;
             character = new Character((string)instantiationData[1], (string)instantiationData[0], 100);
             gameObject.GetComponentInChildren<Renderer>().material.color = ColorUtils.ParseRGBA(character.color);
-        
-
+            GameManager.playerInfoSubjects.Add(this);
         }
 
 
         public void decreaseHealth(int amount)
         {
-            Debug.Log(gameObject.name +" has been shot");
-            this.character.decreaseHealth(amount);
+            Debug.Log(gameObject.name +" has been shot "+ amount);
+            isDead = this.character.decreaseHealth(amount);
+            if (isDead)
+            {
+                Debug.Log(gameObject.name + " is dead!");
+                // handle player death logic here
+            //    GetComponent<PlayerControls>().animator.SetTrigger("isDead");
+            }
+            this.NotifyObservers(character.nickname, character.currentHealth);
             Debug.Log("remaining health " + this.character.currentHealth);
+        }
+
+        public void RegisterObserver(IPlayerInfoObserver observer)
+        {
+            GameManager.playerInfoObservers.Add(observer);
+        }
+
+        public void RegisterObservers(List<IPlayerInfoObserver> obsList)
+        {
+            GameManager.playerInfoObservers.AddRange(obsList);
+        }
+        public void RemoveObserver(IPlayerInfoObserver observer)
+        {
+            GameManager.playerInfoObservers.Remove(observer);
+        }
+        public void NotifyObservers(string nickName, float currentHealth)
+        {
+            foreach (var obs in GameManager.playerInfoObservers)
+            {
+                obs.OnNotify(nickName, currentHealth);
+            }
         }
     }
 }

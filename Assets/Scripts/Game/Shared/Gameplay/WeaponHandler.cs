@@ -4,25 +4,34 @@ using UnityEngine;
 using Core.Model;
 using System.Linq;
 using Core.Event;
+using ExitGames.Client.Photon.StructWrapping;
+using Core.Interface.WeaponUI;
+using static Core.Utils.Constant;
+using Manager;
 namespace Game.Shared.Gameplay {
 
-    public class WeaponHandler : MonoBehaviour
+    public class WeaponHandler : MonoBehaviour, IWeaponUISubject
     {
         Dictionary<Weapon, GameObject> weaponsDictionary = new Dictionary<Weapon, GameObject>();
 
-        Weapon firstWeapon = new Weapon(0, "Sci-Fi Gun", 30, true, 10);
-        Weapon secondWeapon = new Weapon(1, "RL0N-25_low", 30, false, 20);
-        Weapon thirdWeapon = new Weapon(2, "Bio Integrity Gun", 30, false, 30);
+        Weapon firstWeapon = new Weapon(0, "Sci-Fi Gun", 30, true, 10, 0);
+        Weapon secondWeapon = new Weapon(1, "RL0N-25_low", 30, false, 20, 1);
+        Weapon thirdWeapon = new Weapon(2, "Bio Integrity Gun", 30, false, 30, 2);
 
+        
 
         Weapon currentWeapon;
         private Camera playerCamera;
         public GameObject cameraHolder;
-
+        public List<AudioClip> weaponsSound = new List<AudioClip>();
+        private AudioSource audioSource;
 
 
         private void Awake()
         {
+
+            GameManager.weaponUISubject.Add(this);
+
             weaponsDictionary.Add(firstWeapon, GameObject.Find("Sci-Fi Gun"));
             weaponsDictionary.Add(secondWeapon, GameObject.Find("RL0N-25_low"));
             weaponsDictionary.Add(thirdWeapon, GameObject.Find("Bio Integrity Gun"));
@@ -38,6 +47,7 @@ namespace Game.Shared.Gameplay {
             }
 
             playerCamera = cameraHolder.GetComponentInChildren<Camera>();
+            audioSource = GetComponentInParent<AudioSource>();
         }
 
         public void Shot()
@@ -49,12 +59,17 @@ namespace Game.Shared.Gameplay {
             else
             {
                 currentWeapon.decreaseAmo();
+                // Notify ammo decrease event
+                this.NotifyObservers(WeaponNotificationType.WEAPON_AMMO_UPDATE, currentWeapon.currentAmo, -1);
+
+                audioSource.PlayOneShot(weaponsSound[currentWeapon.weaponSoundIndex]);
                 RaycastHit hit;
                 Physics.Raycast(playerCamera.ScreenPointToRay(Input.mousePosition), out hit, 100);
+                Debug.Log("hit object "+hit.collider);
                 if (hit.collider != null)
                 {
                     Debug.Log(hit.collider);
-                    PlayerGotShotEvent.onPlayerShot?.Invoke(currentWeapon.damage);
+           //         PlayerGotShotEvent.onPlayerShot?.Invoke(currentWeapon.damage);
                  
                     if (hit.collider.gameObject.GetComponentInParent<PlayerStates>() != null)
                     {
@@ -64,13 +79,42 @@ namespace Game.Shared.Gameplay {
             }
 
         }
-    //  CreatePlayerEvent.onColorChoosed?.Invoke(PhotonNetwork.LocalPlayer.NickName, Color.red);
+        
 
+        /// <summary>
+        /// Increases the ammunition count for the specified weapon by a fixed amount.
+        /// </summary>
+        /// <remarks>If the specified weapon is not found in the weapons dictionary, no ammunition is
+        /// added and a warning is logged.</remarks>
+        /// <param name="weaponName">The name of the weapon for which to increase the ammunition. Must correspond to a weapon present in the
+        /// weapons dictionary.</param>
+        public void increaseAmmo(string weaponName)
+        {
+            // Find the weapon in the dictionary by its name
+            var weaponEntry = weaponsDictionary.FirstOrDefault(entry => entry.Key.name == weaponName);
+
+            if (weaponEntry.Key != null)
+            {
+                weaponEntry.Key.increaseAmo(20);
+                this.NotifyObservers(WeaponNotificationType.WEAPON_AMMO_UPDATE, currentWeapon.currentAmo, -1);
+            }
+            else
+            {
+                Debug.LogWarning($"Weapon with name {weaponName} not found in the dictionary.");
+            }
+        }
+
+        /// <summary>
+        /// Cycles to the next available weapon, updating the active weapon and its associated game object state.
+        /// </summary>
+        /// <remarks>If the currently active weapon is the last in the collection, this method wraps
+        /// around to activate the first weapon. Only one weapon will be active after calling this method. This method
+        /// is typically used to allow players to switch weapons in sequence during gameplay.</remarks>
         public void ChangeWeapon()
         {
-
             Weapon activeWeapon = weaponsDictionary.FirstOrDefault(x => x.Key.isActive == true).Key;
             int activeIndex = activeWeapon.id + 1 >= weaponsDictionary.Keys.Count ? 0 : activeWeapon.id + 1;
+           
 
             foreach (KeyValuePair<Weapon, GameObject> entry in weaponsDictionary)
             {
@@ -85,6 +129,25 @@ namespace Game.Shared.Gameplay {
                 }
 
                 entry.Value.gameObject.SetActive(entry.Key.isActive);
+            }
+            this.NotifyObservers(WeaponNotificationType.WEAPON_CHANGE, currentWeapon.currentAmo, activeIndex);
+        }
+
+        public void RegisterObserver(IWeaponUIObserver observer)
+        {
+            GameManager.weaponUIObservers.Add(observer);
+        }
+
+        public void RemoveObserver(IWeaponUIObserver observer)
+        {
+            GameManager.weaponUIObservers.Remove(observer);
+        }
+
+        public void NotifyObservers(WeaponNotificationType type, int currentAmmo, int index)
+        {
+            foreach (var obs in GameManager.weaponUIObservers)
+            {
+                obs.OnNotify(type, currentAmmo, index);
             }
         }
     }

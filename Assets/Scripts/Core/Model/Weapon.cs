@@ -12,9 +12,9 @@ namespace Core.Model
         public int currentAmo;
         public int damage;
         public bool isActive;
-
+        public int weaponSoundIndex;
         public Weapon() { }
-        public Weapon(int id, string name, int maxAmoAmt, bool isActive, int damage)
+        public Weapon(int id, string name, int maxAmoAmt, bool isActive, int damage, int weaponSoundIndex)
         {
             this.id = id;
             this.name = name;
@@ -22,6 +22,7 @@ namespace Core.Model
             this.currentAmo = maxAmoAmt;
             this.isActive = isActive;
             this.damage = damage;
+            this.weaponSoundIndex = weaponSoundIndex;
         }
 
         public void decreaseAmo()

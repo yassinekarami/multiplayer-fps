@@ -6,12 +6,19 @@ using System.Collections.Generic;
 using Core.Event;
 using Core.Utils;
 using ExitGames.Client.Photon;
+using Core.Interface.PlayerInfoUI;
+using Core.Interface.WeaponUI;
 
 
 namespace Manager
 {
     public class GameManager : MonoBehaviourPunCallbacks, IInRoomCallbacks
     {
+        public static List<IPlayerInfoObserver> playerInfoObservers = new List<IPlayerInfoObserver>();
+        public static List<IPlayerInfoSubject> playerInfoSubjects = new List<IPlayerInfoSubject>();
+
+        public static List<IWeaponUIObserver> weaponUIObservers = new List<IWeaponUIObserver>();
+        public static List<IWeaponUISubject> weaponUISubject = new List<IWeaponUISubject>();
 
         [SerializeField] private int maxPlayersInRoom = 20;
         public List<Character> characters = new List<Character>();
@@ -43,7 +50,7 @@ namespace Manager
 
             spawnPoints.AddRange(GameObject.FindGameObjectsWithTag(Constant.Tag.SPAWN_POINT));
             weaponSpawnPoints.AddRange(GameObject.FindGameObjectsWithTag(Constant.Tag.WEAPON_SPAWN_POINT));
-            availableWeapons.AddRange(new[] { "RL0N-25_low", "Sci-Fi Gun", "Bio Integrity Gun" });
+            availableWeapons.AddRange(new[] { "spawn/RL0N-25_low", "spawn/Sci-Fi Gun", "spawn/Bio Integrity Gun" });
         }
 
         
@@ -62,8 +69,6 @@ namespace Manager
 
         private void Update()
         {
-
-
             if(PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties != null &&
                 (int)PhotonNetwork.CurrentRoom.CustomProperties["readyPlayers"] == maxPlayersInRoom)
             {

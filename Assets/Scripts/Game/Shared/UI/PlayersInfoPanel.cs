@@ -8,38 +8,45 @@ using Photon.Realtime;
 using ExitGames.Client.Photon;
 using Game.Shared.Gameplay;
 
+using System.Linq;
+using Core.Interface.PlayerInfoUI;
+using Manager;
+
 namespace Game.Shared.UI
 {
-    public class PlayersInfoPanel : MonoBehaviour, IOnEventCallback
+    public class PlayersInfoPanel : MonoBehaviour, IOnEventCallback, IPlayerInfoObserver
     {
         public GameObject playerInfo;
         GameObject[] players;
-        List<Character> playerCharater = new List<Character>();
+        Dictionary<string, GameObject> playerInfoDictionary = new Dictionary<string, GameObject>();
+
+
+
         // Start is called before the first frame update
 
+        /// <summary>
+        /// Initializes the registration of the Character type with Photon for custom serialization.
+        /// </summary>
+        /// <remarks>This method is called by Unity when the script instance is being loaded. It ensures
+        /// that the Character type can be correctly serialized and deserialized by Photon networking. This registration
+        /// should occur before any network operations involving Character objects.</remarks>
         private void Awake()
         {
             PhotonPeer.RegisterType(typeof(Character),(byte)100, Character.Serialize, Character.Deserialize);
+            
         }
+
 
         /// <summary>
-        /// callBack to remove event
+        /// Registers the current object as a Photon callback target and broadcasts player character information to all
+        /// clients when the component is enabled.
         /// </summary>
-        private void OnDisable()
-        {
-            PhotonNetwork.RemoveCallbackTarget(this);
-        }
-        void Start()
-        {
-            //characters = new List<Character>();
-            //characters.Add(new Character("toto", Color.red, 100));
-            //characters.Add(new Character("titi", Color.blue, 100));
-            //InstiateInfoForeachPlayer(characters);
-
-
-        }
+        /// <remarks>This method is typically called by Unity when the component becomes enabled. It
+        /// ensures that the object receives Photon callback events and synchronizes player character data across the
+        /// network. This method should not be called directly.</remarks>
         private void OnEnable()
         {
+            GameManager.playerInfoObservers.Add(this);
             PhotonNetwork.AddCallbackTarget(this);
             players = GameObject.FindGameObjectsWithTag(Constant.Tag.PLAYER);
             List<object> content = new List<object>();
@@ -55,10 +62,13 @@ namespace Game.Shared.UI
             RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
             PhotonNetwork.RaiseEvent(Constant.PunEventCode.setUpPlayerInfoPanelEventCode, content.ToArray(), raiseEventOptions, SendOptions.SendReliable);
         }
-        // Update is called once per frame
-        void Update()
-        {
 
+        /// <summary>
+        /// callBack to remove event
+        /// </summary>
+        private void OnDisable()
+        {
+            PhotonNetwork.RemoveCallbackTarget(this);
         }
 
 
@@ -80,7 +90,24 @@ namespace Game.Shared.UI
                 }
              
                 InstantiateInfoForeachPlayer(characters);
+            }
+            else if (eventCode == Constant.PunEventCode.updatePlayerHealthUIEventCode)
+            {
+                Debug.Log("PlayersInfoPanel received updatePlayerHealthUIEventCode event.");
+                object[] data = (object[])photonEvent.CustomData;
+                string nickName = (string)data[0];
+                float currentHealth = (float)data[1];
 
+                var playerInfoEntry = playerInfoDictionary.FirstOrDefault(entry => entry.Key.Equals(nickName));
+                if (playerInfoEntry.Key != null)
+                {
+                    Debug.Log(currentHealth + "value to be update " + currentHealth / 100);
+                    playerInfoEntry.Value.GetComponentInChildren<Image>().fillAmount = currentHealth/100;
+                }
+                else
+                {
+                    Debug.LogWarning($"PlayerInfo  with nickName {nickName} not found in the dictionary.");
+                }
             }
 
         }
@@ -97,11 +124,14 @@ namespace Game.Shared.UI
 
             foreach (Core.Model.Character character in characters)
             {
-                // playerInfo.GetComponentInChildren<Text>().text =
                 playerInfo.GetComponentInChildren<Text>().text = character.nickname;
                 playerInfo.GetComponentInChildren<Image>().color = ColorUtils.ParseRGBA(character.color);
-                GameObject toInstantiate = Instantiate(playerInfo, gameObject.transform); ;
-          
+                GameObject toInstantiate = Instantiate(playerInfo, gameObject.transform);
+                if (!playerInfoDictionary.ContainsKey(character.nickname))
+                {
+                    playerInfoDictionary.Add(character.nickname, toInstantiate);
+                }
+         
 
                 // Apply vertical offset
                 toInstantiate.GetComponent<RectTransform>().anchoredPosition +=
@@ -109,6 +139,19 @@ namespace Game.Shared.UI
 
                 index++;
             }
+        }
+
+        /// <summary>
+        /// Handles notification events. Intended to be overridden in a derived class to provide custom notification
+        /// handling logic.
+        /// </summary>
+        /// <exception cref="System.NotImplementedException">Thrown if the method is called on a base class instance where it has not been implemented.</exception>
+        public void OnNotify(string nickName, float currentHealth)
+        {
+            Debug.Log("Player info panel notified of a change.");
+            object[] content = new object[] { nickName, currentHealth };
+            RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All };
+            PhotonNetwork.RaiseEvent(Constant.PunEventCode.updatePlayerHealthUIEventCode, content.ToArray(), raiseEventOptions, SendOptions.SendReliable);
         }
     }
 }

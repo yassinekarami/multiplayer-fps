@@ -11,7 +11,7 @@ namespace Core.Model
         public string nickname;
         public string color;
         public int score;
-        public int currentHealth;
+        public float currentHealth;
         public int maxHealth;
         public bool isDead;
 
@@ -25,13 +25,15 @@ namespace Core.Model
             this.isDead = false;
         }
 
-        public void decreaseHealth(int amount)
-        {
+        public bool decreaseHealth(int amount)
+        {   
+
             currentHealth = currentHealth - amount;
             if (currentHealth < 0)
             {
                 isDead = true;
             }
+            return isDead;
         }
 
         public static byte[] Serialize(object obj)
@@ -65,7 +67,7 @@ namespace Core.Model
             WriteShort(buffer, ref index, c.score);
 
             // currentHealth
-            WriteShort(buffer, ref index, c.currentHealth);
+            WriteFloat(buffer, ref index, c.currentHealth);
 
             // maxHealth
             WriteShort(buffer, ref index, c.maxHealth);
@@ -96,7 +98,7 @@ namespace Core.Model
             c.score = ReadShort(data, ref index);
 
             // currentHealth
-            c.currentHealth = ReadShort(data, ref index);
+            c.currentHealth = ReadFloat(data, ref index);
 
             // maxHealth
             c.maxHealth = ReadShort(data, ref index);
@@ -116,6 +118,27 @@ namespace Core.Model
         private static short ReadShort(byte[] buffer, ref int index)
         {
             return (short)((buffer[index++] << 8) | buffer[index++]);
+        }
+
+        private static void WriteFloat(byte[] buffer, ref int index, float value)
+        {
+            int intValue = BitConverter.SingleToInt32Bits(value);
+
+            buffer[index++] = (byte)(intValue >> 24);
+            buffer[index++] = (byte)(intValue >> 16);
+            buffer[index++] = (byte)(intValue >> 8);
+            buffer[index++] = (byte)(intValue);
+        }
+
+        private static float ReadFloat(byte[] buffer, ref int index)
+        {
+            int value =
+                (buffer[index++] << 24) |
+                (buffer[index++] << 16) |
+                (buffer[index++] << 8) |
+                buffer[index++];
+
+            return BitConverter.Int32BitsToSingle(value);
         }
     }
 

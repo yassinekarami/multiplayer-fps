@@ -4,7 +4,6 @@ using Photon.Pun;
 using System.Threading;
 using UnityEngine;
 
-
 namespace Game.Shared.Gameplay
 {
     public class PlayerControls : MonoBehaviour
@@ -15,27 +14,28 @@ namespace Game.Shared.Gameplay
         public float gravity = -9.81f;
 
         private CharacterController controller;
-        private Animator animator;
+        public Animator animator;
         private Camera playerCamera;
         private CinemachineVirtualCamera virtualCamera;
 
         private GameObject weaponParent;
         private Vector3 mouseWorldPosition;
+        private Vector3 mousePosition;
 
         public GameObject cameraHolder;
         public GameObject aimReference;
+        public GameObject crossHair;
 
-        float mouseX;
-        float mouseY;
         float xRotation = 0f;
         private Vector3 velocity;
 
 
         void Start()
         {
-          
+            
             if (GetComponent<PhotonView>() != null && GetComponent<PhotonView>().IsMine)
             {
+                crossHair = GameObject.Find("CrossHair");
                 controller = GetComponent<CharacterController>();
                 animator = GetComponent<Animator>();
                 weaponParent = GameObject.Find("Weapons");
@@ -89,19 +89,12 @@ namespace Game.Shared.Gameplay
             // Body rotation (Y)
             transform.Rotate(Vector3.up * mouseX);
 
-            // Camera rotation (X)
-            xRotation -= mouseY;
-            xRotation = Mathf.Clamp(xRotation, -80f, 80f);
-            cameraHolder.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-
-            // Aim reference (optional)
-            if (aimReference)
-            {
-                Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition); 
-                Plane groundPlane = new Plane(Vector3.up, Vector3.zero); 
-                if (groundPlane.Raycast(ray, out float distance)) 
-                { mouseWorldPosition = ray.GetPoint(distance); }
-            }
+            mousePosition = Input.mousePosition;
+            mousePosition.z = 10f;
+            mouseWorldPosition = playerCamera.ScreenToWorldPoint(mousePosition);
+            // weaponParent.transform.LookAt(mouseWorldPosition);
+            aimReference.transform.position = mouseWorldPosition;
+            crossHair.transform.position = Input.mousePosition;
         }
 
         private void HandleActions()
@@ -121,6 +114,7 @@ namespace Game.Shared.Gameplay
         private void ChangeWeapon()
         {
             weaponParent.GetComponent<WeaponHandler>().ChangeWeapon();
+            // notify weapon UI observers
         }
     }
 
